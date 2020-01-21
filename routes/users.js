@@ -31,14 +31,26 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', checkToken, async (req, res, next) => {
   const { name, birthday, email, gender, snsId, snsType } = req.body;
   if (!name || !birthday || !email || !gender || !snsId || !snsType) {
     return res.json(response({ status: 412, message: '필수 파라이터가 없습니다.' }));
   }
   try {
-    const user = await db.users.create({ name, birthday, email, gender, snsId, snsType });
-    res.json(response({ data: user }));
+    const user = await db.users.findOne({
+      where: {
+        id: req.user.id,
+      },
+    });
+    const newUser = await db.users.update(
+      { name, birthday, email, gender, snsId, snsType },
+      {
+        where: {
+          id: user.id,
+        },
+      },
+    );
+    res.json(response({ data: newUser }));
   } catch (e) {
     console.log(e);
     res.json(response({ status: 500, message: e.message }));
